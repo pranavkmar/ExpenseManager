@@ -1,29 +1,52 @@
 package com.informbytes.expensemanager;
 
+import android.Manifest;
+import android.annotation.SuppressLint;
+import android.content.ContentValues;
 import android.content.DialogInterface;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.nio.channels.FileChannel;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener, View.OnClickListener {
     SQLiteDatabase ExpenseManagerDataBase = null;
-    Button incomeSaveBtn =null;
+    Button incomeSaveBtn = null;
+    Cursor cursor;
+    double inc_total;
+    double exp_total;
+    double bal_total;
+    TextView income, expense, balance;
+    SwipeRefreshLayout swipeRefresh;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -56,11 +79,32 @@ public class MainActivity extends AppCompatActivity
         expenseAppendBtn.setOnClickListener(this);
         Button retrieveUpdateDbBtn = (Button) findViewById(R.id.retrieveUpdateBtnView);
         retrieveUpdateDbBtn.setOnClickListener(this);
+        createDbHelperMethod();
+        income = (TextView) findViewById(R.id.inctv);
+        expense = (TextView) findViewById(R.id.exptv);
+        balance = (TextView) findViewById(R.id.baltv);
+        swipeRefresh = findViewById(R.id.swipe_container);
+        swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                getIncomeData();
+                getExpData();
+                getBalData();
+                income.setText(String.format("₹. %s", inc_total));
+                expense.setText(String.format("₹. %s", exp_total));
+                balance.setText(String.format("₹. %s", bal_total));
+                swipeRefresh.setRefreshing(false);
+            }
+        });
 
 
+    }
+
+    @SuppressLint("WrongConstant")
+    void createDbHelperMethod() {
         // Create Database if necessary or open it if exists
 
-        ExpenseManagerDataBase = openOrCreateDatabase("checkbook.db", MODE_PRIVATE, null); // in Mode SQLiteDatabase.CREATE_IF_NECESSARY
+        ExpenseManagerDataBase = openOrCreateDatabase("ExpenseManagerDB.db", SQLiteDatabase.CREATE_IF_NECESSARY, null); // in Mode  MODE_PRIVATE || SQLiteDatabase.CREATE_IF_NECESSARY
         boolean tableok = false;
 // Check if table exists
         Cursor c = ExpenseManagerDataBase.query(
@@ -69,18 +113,38 @@ public class MainActivity extends AppCompatActivity
 
                 "type=? and name=?",
 
-                new String[]{"table", "checks"},
+                new String[]{"table", "ExpenseManagerTable"},
 
                 null, null, null);
         if (c.getCount() > 0)
             tableok = true;
         if (!tableok) {
 
-            ExpenseManagerDataBase.execSQL("create table ExpenseManagerTable(income real primary key not null,  savedIncome real, item text ,expenditureAmount real, balance real)");
+            ExpenseManagerDataBase.execSQL("create table ExpenseManagerTable(item text ,savedIncome real,ExpenseAmount real)");
 
 // Income , savedIncome, item, expenditureAmount
         }
+    }
 
+
+    private void getIncomeData() {
+        cursor = ExpenseManagerDataBase.rawQuery("SELECT sum(savedIncome) FROM ExpenseManagerTable where item='i' ", null);
+        if (cursor.moveToFirst()) {
+            inc_total = cursor.getDouble(0);
+        }
+    }
+
+    private void getExpData() {
+
+        cursor = ExpenseManagerDataBase.rawQuery("SELECT sum(ExpenseAmount) FROM ExpenseManagerTable where item='e' ", null);
+        if (cursor.moveToFirst()) {
+
+            exp_total = cursor.getDouble(0);
+        }
+    }
+
+    private void getBalData() {
+        bal_total = inc_total - exp_total;
     }
 
     @Override
@@ -149,17 +213,17 @@ public class MainActivity extends AppCompatActivity
 
     }
 
-    public void AlertDilg(MenuItem item)  {
+    public void AlertDilg(MenuItem item) {
         callAlert();
     }
 
     public void callAlert() {
         LayoutInflater inflater = getLayoutInflater();
-        View alertLayout = inflater.inflate(R.layout.group_one, null);
+        final View alertLayout = inflater.inflate(R.layout.group_one, null);
 
-        final EditText etIncome = alertLayout.findViewById(R.id.editText2);
-        incomeSaveBtn =alertLayout.findViewById(R.id.incomeSaveBtnView);
-        incomeSaveBtn.setOnClickListener(this);
+//       EditText amount =
+        incomeSaveBtn = alertLayout.findViewById(R.id.incomeSaveBtnView);
+        incomeSaveBtn.setVisibility(View.INVISIBLE);
         AlertDialog.Builder alert = new AlertDialog.Builder(this);
         alert.setTitle("SET INCOME in DATABASE");
         // this is set the view from XML inside AlertDialog
@@ -170,6 +234,7 @@ public class MainActivity extends AppCompatActivity
 
             @Override
             public void onClick(DialogInterface dialog, int which) {
+
                 Toast.makeText(getBaseContext(), "Operation Cancelled", Toast.LENGTH_SHORT).show();
             }
         });
@@ -178,9 +243,14 @@ public class MainActivity extends AppCompatActivity
 
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                String incomeValue = etIncome.getText().toString();
-
-                Toast.makeText(getBaseContext(), "Income: " + incomeValue + " is Successfully saved in Database", Toast.LENGTH_LONG).show();
+                createDbHelperMethod();
+                EditText amountInflatedOnclickEditText = alertLayout.findViewById(R.id.IncomeSaveAmount);
+                ContentValues cv = new ContentValues();
+                cv.put("savedIncome", Double.parseDouble(amountInflatedOnclickEditText.getText().toString()));
+                cv.put("item", "i");
+                cv.put("ExpenseAmount", 0);
+                ExpenseManagerDataBase.insert("ExpenseManagerTable", null, cv);
+                Toast.makeText(getBaseContext(), "Income: is Successfully saved in Database", Toast.LENGTH_LONG).show();
             }
         });
         AlertDialog dialog = alert.create();
@@ -191,36 +261,36 @@ public class MainActivity extends AppCompatActivity
     public void onClick(View v) {
         switch (v.getId()) {
 
-            case R.id.incomeSaveBtnView:
-
-                // TODO: do your code
-                Toast tsave = Toast.makeText(getApplicationContext(), "SAVE BTN CLICKED", Toast.LENGTH_SHORT);
-                tsave.show();
-
-                break;
+//            case R.id.incomeSaveBtnView:
+//
+//
+//
+//                Toast tsave = Toast.makeText(getApplicationContext(), "SAVE BTN CLICKED", Toast.LENGTH_SHORT);
+//                tsave.show();
+//
+//                break;
 
             case R.id.expenseAppendBtnView:
-                // TODO: do your code
-                Toast.makeText(getApplicationContext(), "Expenses Added in databases", Toast.LENGTH_SHORT).show();
 
+                createDbHelperMethod();
+                EditText ExpenseAmountET = findViewById(R.id.expenseAddET);
+                ContentValues cv = new ContentValues();
+                cv.put("savedIncome", 0);
+                cv.put("item", "e");
+                cv.put("ExpenseAmount", Double.parseDouble(ExpenseAmountET.getText().toString()));
+                ExpenseManagerDataBase.insert("ExpenseManagerTable", null, cv);
+                Toast.makeText(getBaseContext(), "Expense: is saved in Database", Toast.LENGTH_LONG).show();
                 break;
 
             case R.id.retrieveUpdateBtnView:
-                // TODO: do your code
 
-                Toast.makeText(getApplicationContext(), "Update Button Pressed", Toast.LENGTH_SHORT).show();
-//                String key = number.getText().toString();
-//
-//                Cursor c = checkbook.query("checks", null, "cheque_number=?",
-//
-//                        new String[]{key}, null, null, null, null);
-//
-//                if (c.getCount() == 0) {
-//
-//                    Toast.makeText(myContext, "no record exists",
-//
-//                            Toast.LENGTH_SHORT).show();
-
+                getIncomeData();
+                getExpData();
+                getBalData();
+                income.setText(String.format("₹. %s", inc_total));
+                expense.setText(String.format("₹. %s", exp_total));
+                balance.setText(String.format("₹. %s", bal_total));
+                Toast.makeText(getApplicationContext(), "Data Updated", Toast.LENGTH_SHORT).show();
                 break;
 
             default:
@@ -229,5 +299,35 @@ public class MainActivity extends AppCompatActivity
 
     }
 
+    @Override
+    protected void onStop() {
+
+        super.onStop();
+    }
+
+    @Override
+    protected void onPause() {
+        try {
+            File sd = Environment.getExternalStorageDirectory();
+            File data = Environment.getDataDirectory();
+
+            if (sd.canWrite()) {
+                String currentDBPath = "//data//"+getPackageName() +"//databases//ExpenseManagerDB.db";
+                String backupDBPath = "ExpenseManagerDB.db";
+                File currentDB = new File(data, currentDBPath);
+                File backupDB = new File(sd, backupDBPath);
+
+                FileChannel src = new FileInputStream(currentDB).getChannel();
+                FileChannel dst = new FileOutputStream(backupDB).getChannel();
+                dst.transferFrom(src, 0, src.size());
+                src.close();
+                dst.close();
+                Toast.makeText(getBaseContext(), backupDB.toString(), Toast.LENGTH_LONG).show();
+            }
+        } catch (Exception e) {
+            Toast.makeText(getBaseContext(), e.toString(), Toast.LENGTH_LONG).show();
+        }
+        super.onPause();
+    }
 }
 

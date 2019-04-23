@@ -52,7 +52,7 @@
         tools:layout_conversion_absoluteWidth="50dp" />
 
     <TextView
-        android:id="@+id/textView4"
+        android:id="@+id/inctv"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
@@ -69,13 +69,13 @@
         tools:layout_conversion_absoluteWidth="19dp" />
 
     <TextView
-        android:id="@+id/textView5"
+        android:id="@+id/exptv"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:text="₹ 0"
         android:textStyle="bold"
-        app:layout_constraintBaseline_toBaselineOf="@+id/textView4"
+        app:layout_constraintBaseline_toBaselineOf="@+id/inctv"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintStart_toStartOf="@+id/textView2"
@@ -85,12 +85,12 @@
         tools:layout_conversion_absoluteWidth="19dp" />
 
     <TextView
-        android:id="@+id/textView6"
+        android:id="@+id/baltv"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="₹ 0"
         android:textStyle="bold"
-        app:layout_constraintBaseline_toBaselineOf="@+id/textView5"
+        app:layout_constraintBaseline_toBaselineOf="@+id/exptv"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintStart_toStartOf="@+id/textView3"
         tools:layout_conversion_absoluteHeight="19dp"

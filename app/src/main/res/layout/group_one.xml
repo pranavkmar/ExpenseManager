@@ -26,7 +26,7 @@
         app:layout_constraintVertical_bias="0.0" />
 
     <EditText
-        android:id="@+id/editText2"
+        android:id="@+id/IncomeSaveAmount"
         android:layout_width="138dp"
         android:layout_height="43dp"
         android:layout_marginStart="24dp"
@@ -50,7 +50,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.256"
-        app:layout_constraintStart_toStartOf="@+id/editText2"
-        app:layout_constraintTop_toBottomOf="@+id/editText2"
+        app:layout_constraintStart_toStartOf="@+id/IncomeSaveAmount"
+        app:layout_constraintTop_toBottomOf="@+id/IncomeSaveAmount"
         app:layout_constraintVertical_bias="0.0" />
 </android.support.constraint.ConstraintLayout>

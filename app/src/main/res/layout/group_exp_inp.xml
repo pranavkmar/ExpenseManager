@@ -22,7 +22,7 @@
         app:layout_constraintVertical_bias="0.0" />
 
     <EditText
-        android:id="@+id/editText3"
+        android:id="@+id/expenseAddET"
         android:layout_width="133dp"
         android:layout_height="45dp"
         android:layout_marginStart="16dp"
