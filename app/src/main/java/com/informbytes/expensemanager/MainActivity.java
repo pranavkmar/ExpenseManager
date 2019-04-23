@@ -7,21 +7,16 @@ import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.view.GravityCompat;
-import android.support.v4.widget.DrawerLayout;
 import android.support.v4.widget.SwipeRefreshLayout;
-import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -37,20 +32,19 @@ import java.io.FileOutputStream;
 import java.nio.channels.FileChannel;
 
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener, View.OnClickListener {
+        implements View.OnClickListener {
     SQLiteDatabase ExpenseManagerDataBase = null;
     Button incomeSaveBtn = null;
     Cursor cursor;
-    double inc_total;
-    double exp_total;
-    double bal_total;
+    double inc_total, exp_total, bal_total;
     TextView income, expense, balance;
     SwipeRefreshLayout swipeRefresh;
+    EditText incomeEditView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.app_bar_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
@@ -59,26 +53,17 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onClick(View view) {
                 AlertDilg(view);
-//                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-//                        .setAction("Action", null).show();
             }
         });
-
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-        drawer.addDrawerListener(toggle);
-        toggle.syncState();
-
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
-        navigationView.setNavigationItemSelectedListener(this);
-
-//        incomeSaveBtn = (Button) findViewById(R.id.incomeSaveBtnView);
-//        incomeSaveBtn.setOnClickListener((View.OnClickListener) getApplicationContext());
+        incomeEditView = (EditText) findViewById(R.id.incomeViewET);
+        incomeEditView.setVisibility(View.INVISIBLE);
+        Button incomeSaveButton = (Button) findViewById(R.id.incomeSaveBtnView);
+        incomeSaveButton.setOnClickListener(this);
         Button expenseAppendBtn = (Button) findViewById(R.id.expenseAppendBtnView);
         expenseAppendBtn.setOnClickListener(this);
         Button retrieveUpdateDbBtn = (Button) findViewById(R.id.retrieveUpdateBtnView);
         retrieveUpdateDbBtn.setOnClickListener(this);
+        //create DB
         createDbHelperMethod();
         income = (TextView) findViewById(R.id.inctv);
         expense = (TextView) findViewById(R.id.exptv);
@@ -96,9 +81,16 @@ public class MainActivity extends AppCompatActivity
                 swipeRefresh.setRefreshing(false);
             }
         });
+//Optional
+        if (ContextCompat.checkSelfPermission(this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
 
-
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
+                    12);
+        }
     }
+
 
     @SuppressLint("WrongConstant")
     void createDbHelperMethod() {
@@ -106,6 +98,7 @@ public class MainActivity extends AppCompatActivity
 
         ExpenseManagerDataBase = openOrCreateDatabase("ExpenseManagerDB.db", SQLiteDatabase.CREATE_IF_NECESSARY, null); // in Mode  MODE_PRIVATE || SQLiteDatabase.CREATE_IF_NECESSARY
         boolean tableok = false;
+        int backupFlag = 0;
 // Check if table exists
         Cursor c = ExpenseManagerDataBase.query(
 
@@ -121,8 +114,35 @@ public class MainActivity extends AppCompatActivity
         if (!tableok) {
 
             ExpenseManagerDataBase.execSQL("create table ExpenseManagerTable(item text ,savedIncome real,ExpenseAmount real)");
+            backupFlag = 1;
+            // Income , savedIncome, item, expenditureAmount
+        }
+        if (backupFlag == 1) {
+            backupDB();
+        }
 
-// Income , savedIncome, item, expenditureAmount
+    }
+
+    private void backupDB() {
+        try {
+            File sd = Environment.getExternalStorageDirectory();
+            File data = Environment.getDataDirectory();
+
+            if (sd.canWrite()) {
+                String currentDBPath = "//data//" + getPackageName() + "//databases//ExpenseManagerDB.db";
+                String backupDBPath = "ExpenseManagerDB.db";
+                File currentDB = new File(data, currentDBPath);
+                File backupDB = new File(sd, backupDBPath);
+
+                FileChannel src = new FileInputStream(currentDB).getChannel();
+                FileChannel dst = new FileOutputStream(backupDB).getChannel();
+                dst.transferFrom(src, 0, src.size());
+                src.close();
+                dst.close();
+                Toast.makeText(getBaseContext(), backupDB.toString(), Toast.LENGTH_LONG).show();
+            }
+        } catch (Exception e) {
+            Toast.makeText(getBaseContext(), e.toString(), Toast.LENGTH_LONG).show();
         }
     }
 
@@ -147,81 +167,14 @@ public class MainActivity extends AppCompatActivity
         bal_total = inc_total - exp_total;
     }
 
-    @Override
-    public void onBackPressed() {
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        if (drawer.isDrawerOpen(GravityCompat.START)) {
-            drawer.closeDrawer(GravityCompat.START);
-        } else {
-            super.onBackPressed();
-        }
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-//         AlertDilg();
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
-
-
-    @SuppressWarnings("StatementWithEmptyBody")
-    @Override
-    public boolean onNavigationItemSelected(MenuItem item) {
-        // Handle navigation view item clicks here.
-        int id = item.getItemId();
-
-        if (id == R.id.nav_camera) {
-            // Handle the camera action
-        } else if (id == R.id.nav_gallery) {
-
-        } else if (id == R.id.nav_slideshow) {
-
-        } else if (id == R.id.nav_manage) {
-
-        } else if (id == R.id.nav_share) {
-
-        } else if (id == R.id.nav_send) {
-
-        }
-
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        drawer.closeDrawer(GravityCompat.START);
-        return true;
-    }
-
-
-    public void AlertDilg(View view) {
-
-        callAlert();
-
-    }
-
-    public void AlertDilg(MenuItem item) {
-        callAlert();
-    }
 
     public void callAlert() {
         LayoutInflater inflater = getLayoutInflater();
-        final View alertLayout = inflater.inflate(R.layout.group_one, null);
+        final View alertLayout = inflater.inflate(R.layout.group_income, null);
 
-//       EditText amount =
+        EditText incomeEditViewInf = alertLayout.findViewById(R.id.incomeViewET);
+        incomeEditViewInf.setWidth(40);
+        incomeEditViewInf.setVisibility(View.VISIBLE);
         incomeSaveBtn = alertLayout.findViewById(R.id.incomeSaveBtnView);
         incomeSaveBtn.setVisibility(View.INVISIBLE);
         AlertDialog.Builder alert = new AlertDialog.Builder(this);
@@ -244,7 +197,7 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 createDbHelperMethod();
-                EditText amountInflatedOnclickEditText = alertLayout.findViewById(R.id.IncomeSaveAmount);
+                EditText amountInflatedOnclickEditText = alertLayout.findViewById(R.id.incomeViewET);
                 ContentValues cv = new ContentValues();
                 cv.put("savedIncome", Double.parseDouble(amountInflatedOnclickEditText.getText().toString()));
                 cv.put("item", "i");
@@ -261,25 +214,25 @@ public class MainActivity extends AppCompatActivity
     public void onClick(View v) {
         switch (v.getId()) {
 
-//            case R.id.incomeSaveBtnView:
-//
-//
-//
+            case R.id.incomeSaveBtnView:
+                AlertDilg(v);
 //                Toast tsave = Toast.makeText(getApplicationContext(), "SAVE BTN CLICKED", Toast.LENGTH_SHORT);
 //                tsave.show();
-//
 //                break;
 
             case R.id.expenseAppendBtnView:
+                EditText expenseET = (EditText) findViewById(R.id.expenseAddET);
+                if (!expenseET.getText().toString().isEmpty()) {
+                    createDbHelperMethod();
 
-                createDbHelperMethod();
-                EditText ExpenseAmountET = findViewById(R.id.expenseAddET);
-                ContentValues cv = new ContentValues();
-                cv.put("savedIncome", 0);
-                cv.put("item", "e");
-                cv.put("ExpenseAmount", Double.parseDouble(ExpenseAmountET.getText().toString()));
-                ExpenseManagerDataBase.insert("ExpenseManagerTable", null, cv);
-                Toast.makeText(getBaseContext(), "Expense: is saved in Database", Toast.LENGTH_LONG).show();
+                    ContentValues cv = new ContentValues();
+                    cv.put("savedIncome", 0);
+                    cv.put("item", "e");
+                    cv.put("ExpenseAmount", Double.parseDouble(expenseET.getText().toString()));
+                    ExpenseManagerDataBase.insert("ExpenseManagerTable", null, cv);
+                    Toast.makeText(getBaseContext(), "Expense: is saved in Database", Toast.LENGTH_LONG).show();
+                }else
+                    Toast.makeText(this, "Enter a Value in Field", Toast.LENGTH_SHORT).show();
                 break;
 
             case R.id.retrieveUpdateBtnView:
@@ -299,6 +252,65 @@ public class MainActivity extends AppCompatActivity
 
     }
 
+    public void AlertDilg(View view) {
+
+        callAlert();
+
+    }
+
+    public void AlertDilg(MenuItem item) {
+        callAlert();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String permissions[], @NonNull int[] grantResults) {
+        switch (requestCode) {
+            case 12: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    // do something
+
+//                    requestGranted=true;
+                } else {
+                    // not granted
+                    Toast.makeText(this, "We require Storage permission to write on a Text File", Toast.LENGTH_SHORT).show();
+                }
+                return;
+            }
+        }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.incomeMenu) {
+//         AlertDilg();
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onBackPressed() {
+
+        super.onBackPressed();
+
+    }
+
     @Override
     protected void onStop() {
 
@@ -307,26 +319,7 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     protected void onPause() {
-        try {
-            File sd = Environment.getExternalStorageDirectory();
-            File data = Environment.getDataDirectory();
 
-            if (sd.canWrite()) {
-                String currentDBPath = "//data//"+getPackageName() +"//databases//ExpenseManagerDB.db";
-                String backupDBPath = "ExpenseManagerDB.db";
-                File currentDB = new File(data, currentDBPath);
-                File backupDB = new File(sd, backupDBPath);
-
-                FileChannel src = new FileInputStream(currentDB).getChannel();
-                FileChannel dst = new FileOutputStream(backupDB).getChannel();
-                dst.transferFrom(src, 0, src.size());
-                src.close();
-                dst.close();
-                Toast.makeText(getBaseContext(), backupDB.toString(), Toast.LENGTH_LONG).show();
-            }
-        } catch (Exception e) {
-            Toast.makeText(getBaseContext(), e.toString(), Toast.LENGTH_LONG).show();
-        }
         super.onPause();
     }
 }

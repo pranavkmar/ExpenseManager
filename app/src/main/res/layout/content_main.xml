@@ -55,26 +55,20 @@
                     android:layout_height="2dp"
                     android:background="?android:attr/listDivider"
                     app:layout_constraintBottom_toBottomOf="parent"
+
                     app:layout_constraintTop_toBottomOf="@id/header_ieb"
                     app:layout_constraintVertical_bias="0.072"
                     tools:layout_editor_absoluteX="5dp" />
 
-                <!--<include-->
-                <!--android:id="@+id/includeIncome"-->
-                <!--layout="@layout/group_one"-->
-                <!--android:layout_width="wrap_content"-->
 
-                <!--android:layout_height="wrap_content"-->
-                <!--android:layout_marginStart="2dp"-->
-                <!--android:layout_marginTop="20dp"-->
-                <!--android:layout_marginEnd="2dp"-->
-
-                <!--android:layout_marginBottom="8dp"-->
-                <!--app:layout_constraintBottom_toBottomOf="parent"-->
-                <!--app:layout_constraintEnd_toEndOf="parent"-->
-                <!--app:layout_constraintStart_toStartOf="parent"-->
-                <!--app:layout_constraintTop_toBottomOf="@+id/divider"-->
-                <!--app:layout_constraintVertical_bias="1.0" />-->
+                <include
+                    android:id="@+id/save_income"
+                    layout="@layout/group_income"
+                    android:layout_width="match_parent"
+                    android:layout_marginTop="40dp"
+                    android:layout_height="wrap_content"
+                    app:layout_constraintStart_toStartOf="@+id/header_ieb"
+                    app:layout_constraintTop_toBottomOf="@id/divider" />
 
                 <include
                     android:id="@+id/exp_group"
@@ -88,8 +82,9 @@
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/divider"
+                    app:layout_constraintTop_toBottomOf="@+id/save_income"
                     app:layout_constraintVertical_bias="0.0" />
+
 
                 <include
                     layout="@layout/group_bal"

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+
+    <TextView
+        android:id="@+id/incomeViewTV"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Income Amount"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.091"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+       />
+
+    <EditText
+        android:id="@+id/incomeViewET"
+        android:layout_width="118dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:inputType="number"
+
+        android:text=""
+        app:layout_constraintBaseline_toBaselineOf="@+id/incomeViewTV"
+        app:layout_constraintStart_toEndOf="@+id/incomeViewTV" />
+
+    <Button
+        android:id="@+id/incomeSaveBtnView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:text="ADD"
+        app:layout_constraintBaseline_toBaselineOf="@+id/incomeViewTV"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/incomeViewET"
+        app:layout_constraintTop_toTopOf="@+id/incomeViewTV"
+        app:layout_constraintVertical_bias="0.0" />
+
+</android.support.constraint.ConstraintLayout>
